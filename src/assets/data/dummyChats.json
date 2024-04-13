@@ -1,0 +1,44 @@
+[
+  {
+    "id": "1",
+    "sender": "John Doe",
+    "message": "Hello there!",
+    "timestamp": "2024-04-15T10:30:00Z"
+  },
+  {
+    "id": "2",
+    "sender": "Alice Smith",
+    "message": "How are you?",
+    "timestamp": "2024-04-15T11:15:00Z"
+  },
+  {
+    "id": "3",
+    "sender": "Bob Johnson",
+    "message": "What's up?",
+    "timestamp": "2024-04-15T12:00:00Z"
+  },
+  {
+    "id": "4",
+    "sender": "Leonardi",
+    "message": "What's up?",
+    "timestamp": "2024-04-15T12:00:00Z"
+  },
+  {
+    "id": "5",
+    "sender": "April",
+    "message": "What's up?",
+    "timestamp": "2024-04-15T12:00:00Z"
+  },
+  {
+    "id": "6",
+    "sender": "Jennie",
+    "message": "I don't know",
+    "timestamp": "2024-04-15T12:00:00Z"
+  },
+  {
+    "id": "7",
+    "sender": "HR Recruiter",
+    "message": "Hi",
+    "timestamp": "2024-04-15T12:00:00Z"
+  }
+]

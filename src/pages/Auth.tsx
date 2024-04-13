@@ -5,7 +5,7 @@ const Auth: React.FC = () => {
   const location = useLocation();
 
   let formComponent: React.ReactNode;
-  if (location.pathname === "/") {
+  if (location.pathname === "/login") {
     formComponent = <LoginForm />;
   }
 

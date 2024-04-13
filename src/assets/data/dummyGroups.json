@@ -1,0 +1,20 @@
+[
+  {
+    "id": "1",
+    "name": "Work Team",
+    "lastMessage": "Meeting at 2 PM",
+    "timestamp": "2024-04-15T09:45:00Z"
+  },
+  {
+    "id": "2",
+    "name": "Study Group",
+    "lastMessage": "Don't forget the assignment",
+    "timestamp": "2024-04-15T14:20:00Z"
+  },
+  {
+    "id": "3",
+    "name": "Family Chat",
+    "lastMessage": "Dinner at Grandma's tomorrow",
+    "timestamp": "2024-04-15T18:30:00Z"
+  }
+]

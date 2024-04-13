@@ -4,20 +4,24 @@ import {
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithPopup,
+  signOut,
   User,
 } from "firebase/auth";
 import { getDatabase, ref, set, child } from "firebase/database";
 import firebase from "../config/firebase";
+import { useNavigate } from "react-router-dom";
 
 const useFirebase = () => {
   const [auth, setAuth] = useState(null);
   const [user, setUser] = useState<User | null>(null);
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const authInstance = getAuth(firebase);
     setAuth(authInstance);
 
-    const unsubscribe = onAuthStateChanged(authInstance, (loggedInUser) => {
+    const unregister = onAuthStateChanged(authInstance, (loggedInUser) => {
       if (loggedInUser) {
         // User has logged in
         setUser(loggedInUser);
@@ -26,12 +30,17 @@ const useFirebase = () => {
         // User has logged out
         setUser(null);
       }
+      // Set loading to false if auth state obtained already
+      setIsLoading(false);
     });
 
     // Clean up function
-    return () => unsubscribe();
+    return () => unregister();
   }, []);
 
+  /**
+   * Sign In with Google function
+   */
   const signInWithGoogle = async () => {
     if (!auth) {
       console.error("Firebase authentication instance not initialized.");
@@ -46,15 +55,20 @@ const useFirebase = () => {
       setUser(user);
       // Save user to database
       saveUserToDatabase(user);
+      navigate("/");
       return user;
     } catch (error) {
       throw new Error("Error signing in with Google: " + error.message);
     }
   };
 
+  /**
+   * Save User to Realtime DB
+   */
   const saveUserToDatabase = (loggedInUser: User) => {
     const database = getDatabase(firebase);
     const usersRef = ref(database, "users");
+    console.log("User: " + loggedInUser);
 
     // Assuming you want to save the user with their UID as the key
     set(child(usersRef, loggedInUser.uid), {
@@ -69,7 +83,23 @@ const useFirebase = () => {
       });
   };
 
-  return { signInWithGoogle, user };
+  /**
+   * Get user authenticated state
+   */
+  const isAuthenticated = () => {
+    // Return true if user is logged in, otherwise it is false
+    return !!user;
+  };
+
+  const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  return { signInWithGoogle, user, isAuthenticated, isLoading, logout };
 };
 
 export default useFirebase;
