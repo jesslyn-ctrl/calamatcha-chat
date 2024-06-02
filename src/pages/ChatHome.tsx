@@ -117,7 +117,7 @@ const ChatHome: React.FC = () => {
           </button>
         </div>
 
-        {/* Chat or Group List */}
+        {/* Chat, Friends or Group List */}
         <div className="flex-grow overflow-y-auto py-2 px-4">
           {activeTab === "chats" ? (
             <ChatList chats={dummyChats} />
