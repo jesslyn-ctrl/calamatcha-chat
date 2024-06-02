@@ -1,16 +1,21 @@
 import React, { useState } from "react";
 import useFirebase from "../hooks/useFirebase";
 import { useNavigate } from "react-router-dom";
-import { ChatList, GroupChatList, ChatForm } from "../components";
+import {
+  ChatList,
+  FriendChatList,
+  GroupChatList,
+  ChatForm,
+} from "../components";
 import dummyChats from "../assets/data/dummyChats.json";
 import dummyGroups from "../assets/data/dummyGroups.json";
 
 const ChatHome: React.FC = () => {
   const { logout } = useFirebase();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"chats" | "groups" | "profile">(
-    "chats"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "chats" | "friends" | "groups" | "profile"
+  >("chats");
 
   const handleLogout = async () => {
     try {
@@ -45,6 +50,27 @@ const ChatHome: React.FC = () => {
                 className="pr-2"
               />
               Chats
+            </span>
+          </button>
+
+          {/* Friends Tab */}
+          <button
+            onClick={() => setActiveTab("friends")}
+            className={`mr-2 py-2 px-4 rounded-md ${
+              activeTab === "friends"
+                ? "bg-red-400 hover:bg-red-500 text-white"
+                : "bg-slate-400 hover:bg-slate-500 text-gray-700 hover:text-white"
+            }`}
+          >
+            <span className="flex items-center font-semibold">
+              <img
+                width="30"
+                height="30"
+                src="/assets/images/icons/group-white-48.png"
+                alt="friend"
+                className="pr-2"
+              />
+              Friends
             </span>
           </button>
 
@@ -95,6 +121,8 @@ const ChatHome: React.FC = () => {
         <div className="flex-grow overflow-y-auto py-2 px-4">
           {activeTab === "chats" ? (
             <ChatList chats={dummyChats} />
+          ) : activeTab === "friends" ? (
+            <FriendChatList friendChats={dummyGroups} />
           ) : activeTab === "groups" ? (
             <GroupChatList groupChats={dummyGroups} />
           ) : (

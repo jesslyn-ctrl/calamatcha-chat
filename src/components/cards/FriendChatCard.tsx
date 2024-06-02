@@ -1,21 +1,21 @@
 import React from "react";
 
-interface GroupChatCardProps {
+interface FriendChatCardProps {
   id: string;
-  groupName: string;
+  friendName: string;
   lastMessage: string;
 }
 
-const GroupChatCard: React.FC<GroupChatCardProps> = ({
-  groupName,
+const FriendChatCard: React.FC<FriendChatCardProps> = ({
+  friendName,
   lastMessage,
 }) => {
   return (
     <div className="bg-white hover:bg-green-50 rounded-lg p-4 shadow-md mb-2 transition duration-200 ease-in-out cursor-pointer">
-      <h4 className="text-lg font-semibold mb-2">{groupName}</h4>
+      <h4 className="text-lg font-semibold mb-2">{friendName}</h4>
       <p className="text-slate-500">Last message: {lastMessage}</p>
     </div>
   );
 };
 
-export default GroupChatCard;
+export default FriendChatCard;
