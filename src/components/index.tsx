@@ -8,3 +8,4 @@ export { default as ChatList } from "./list/ChatList";
 export { default as FriendChatList } from "./list/FriendChatList";
 export { default as GroupChatList } from "./list/GroupChatList";
 export { default as Bubble } from "./bubble/Bubble";
+export { default as AddFriendPopup } from "./popup/AddFriendPopup";

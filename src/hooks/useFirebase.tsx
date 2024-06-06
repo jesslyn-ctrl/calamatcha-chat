@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   getAuth,
   GoogleAuthProvider,
@@ -7,8 +7,19 @@ import {
   signOut,
   User,
 } from "firebase/auth";
-import { getDatabase, ref, set, child } from "firebase/database";
+import {
+  getDatabase,
+  ref,
+  get,
+  set,
+  child,
+  query,
+  orderByChild,
+  startAt,
+  endAt,
+} from "firebase/database";
 import firebase from "../config/firebase";
+import { Users } from "../models";
 import { useNavigate } from "react-router-dom";
 
 const useFirebase = () => {
@@ -84,6 +95,28 @@ const useFirebase = () => {
   };
 
   /**
+   * Search for emails
+   */
+  const searchEmails = useCallback(async (email: string): Promise<string[]> => {
+    const emailQuery = query(
+      ref(getDatabase(firebase), "users"),
+      orderByChild("email"),
+      startAt(email),
+      endAt(email + "\uf8ff")
+    );
+
+    const snapshot = await get(emailQuery);
+    if (snapshot.exists()) {
+      const emails = Object.values(snapshot.val()).map(
+        (user: Users[]) => user.email
+      );
+      return emails as string[];
+    } else {
+      return [];
+    }
+  }, []);
+
+  /**
    * Get user authenticated state
    */
   const isAuthenticated = () => {
@@ -99,7 +132,14 @@ const useFirebase = () => {
     }
   };
 
-  return { signInWithGoogle, user, isAuthenticated, isLoading, logout };
+  return {
+    signInWithGoogle,
+    user,
+    isAuthenticated,
+    isLoading,
+    logout,
+    searchEmails,
+  };
 };
 
 export default useFirebase;

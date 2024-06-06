@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import useFirebase from "./../../hooks/useFirebase";
 
 interface AddFriendPopupProps {
   isOpen: boolean;
@@ -11,12 +12,34 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({
   onClose,
   onAddFriend,
 }) => {
+  const { searchEmails } = useFirebase();
   const [email, setEmail] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  const fetchEmailSuggestions = useCallback(async () => {
+    if (email) {
+      try {
+        const emails = await searchEmails(email);
+        console.log(emails);
+        setSuggestions(emails);
+      } catch (error) {
+        console.error("Error fetching email suggestions:", error);
+        setSuggestions([]);
+      }
+    } else {
+      setSuggestions([]);
+    }
+  }, [email, searchEmails]);
+
+  useEffect(() => {
+    fetchEmailSuggestions();
+  }, [email, fetchEmailSuggestions]);
 
   const handleAddFriend = () => {
     if (email) {
       onAddFriend(email);
       setEmail("");
+      setSuggestions([]);
       onClose();
     }
   };
@@ -35,6 +58,19 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+            {suggestions.length > 0 && (
+              <ul className="border border-gray-300 rounded mb-4">
+                {suggestions.map((suggestion, idx) => (
+                  <li
+                    key={idx}
+                    className="p-2 cursor-pointer hover:bg-gray-200"
+                    onClick={() => setEmail(suggestion)}
+                  >
+                    {suggestion}
+                  </li>
+                ))}
+              </ul>
+            )}
             <div className="flex justify-end space-x-4">
               <button
                 className="bg-gray-500 text-white py-2 px-4 rounded"

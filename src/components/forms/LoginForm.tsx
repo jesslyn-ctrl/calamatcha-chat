@@ -7,10 +7,8 @@ const LoginForm: React.FC = () => {
   const handleLoginWithGoogle = async () => {
     try {
       await signInWithGoogle();
-      // Handle successful login, redirect, or any other logic here
     } catch (error) {
       console.error("Error signing in with Google:", error.message);
-      // Handle error, display error message, or any other logic here
     }
   };
 

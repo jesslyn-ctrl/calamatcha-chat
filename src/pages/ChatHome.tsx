@@ -6,6 +6,7 @@ import {
   FriendChatList,
   GroupChatList,
   ChatForm,
+  AddFriendPopup,
 } from "../components";
 import dummyChats from "../assets/data/dummyChats.json";
 import dummyGroups from "../assets/data/dummyGroups.json";
@@ -17,6 +18,15 @@ const ChatHome: React.FC = () => {
     "chats" | "friends" | "groups" | "profile"
   >("chats");
 
+  // Add Friend Popup
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  // Handle Add Friend function
+  const handleAddFriend = (email: string) => {
+    console.log("Adding a friend: ", email);
+    // TODO: Logic
+  };
+
+  // Logout function
   const handleLogout = async () => {
     try {
       await logout();
@@ -122,7 +132,20 @@ const ChatHome: React.FC = () => {
           {activeTab === "chats" ? (
             <ChatList chats={dummyChats} />
           ) : activeTab === "friends" ? (
-            <FriendChatList friendChats={dummyGroups} />
+            <div>
+              <button
+                className="py-2 px-4 mb-4 rounded-md font-semibold bg-green-500 hover:bg-green-600 text-white"
+                onClick={() => setIsPopupOpen(true)}
+              >
+                Add Friend
+              </button>
+              <AddFriendPopup
+                isOpen={isPopupOpen}
+                onClose={() => setIsPopupOpen(false)}
+                onAddFriend={handleAddFriend}
+              />
+              <FriendChatList friendChats={dummyGroups} />
+            </div>
           ) : activeTab === "groups" ? (
             <GroupChatList groupChats={dummyGroups} />
           ) : (
