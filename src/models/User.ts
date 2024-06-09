@@ -1,8 +1,9 @@
-interface Users {
+interface User {
+  uid: string;
   email: string;
   displayName: string;
   chatDisplayName?: string;
   username: string;
 }
 
-export default Users;
+export default User;

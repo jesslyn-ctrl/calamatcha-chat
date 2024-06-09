@@ -4,7 +4,7 @@ import useFirebase from "./../../hooks/useFirebase";
 interface AddFriendPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddFriend: (email: string) => void;
+  onAddFriend: (username: string) => void;
 }
 
 const AddFriendPopup: React.FC<AddFriendPopupProps> = ({
@@ -12,33 +12,32 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({
   onClose,
   onAddFriend,
 }) => {
-  const { searchEmails } = useFirebase();
-  const [email, setEmail] = useState("");
+  const { searchUsername } = useFirebase();
+  const [username, setUsername] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const fetchEmailSuggestions = useCallback(async () => {
-    if (email) {
+    if (username) {
       try {
-        const emails = await searchEmails(email);
-        console.log(emails);
-        setSuggestions(emails);
+        const usernameData = await searchUsername(username);
+        setSuggestions(usernameData);
       } catch (error) {
-        console.error("Error fetching email suggestions:", error);
+        console.error("Error fetching username suggestions:", error);
         setSuggestions([]);
       }
     } else {
       setSuggestions([]);
     }
-  }, [email, searchEmails]);
+  }, [username, searchUsername]);
 
   useEffect(() => {
     fetchEmailSuggestions();
-  }, [email, fetchEmailSuggestions]);
+  }, [username, fetchEmailSuggestions]);
 
   const handleAddFriend = () => {
-    if (email) {
-      onAddFriend(email);
-      setEmail("");
+    if (username) {
+      onAddFriend(username);
+      setUsername("");
       setSuggestions([]);
       onClose();
     }
@@ -52,11 +51,11 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({
           <div className="bg-white rounded-lg p-6 z-50 shadow-lg max-w-md w-full">
             <h2 className="text-xl font-bold mb-4">Add Friend</h2>
             <input
-              type="email"
+              type="username"
               className="w-full p-2 border border-gray-300 rounded mb-4"
-              placeholder="Enter your friend's email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your friend's username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
             />
             {suggestions.length > 0 && (
               <ul className="border border-gray-300 rounded mb-4">
@@ -64,7 +63,7 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({
                   <li
                     key={idx}
                     className="p-2 cursor-pointer hover:bg-gray-200"
-                    onClick={() => setEmail(suggestion)}
+                    onClick={() => setUsername(suggestion)}
                   >
                     {suggestion}
                   </li>

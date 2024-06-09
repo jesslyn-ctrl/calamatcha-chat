@@ -1,5 +1,6 @@
 export { default as LoginForm } from "./forms/LoginForm";
 export { default as ChatForm } from "./forms/ChatForm";
+export { default as UserForm } from "./forms/UserForm";
 export { default as LoadingSpinner } from "./others/LoadingSpinner";
 export { default as ChatCard } from "./cards/ChatCard";
 export { default as FriendChatCard } from "./cards/FriendChatCard";

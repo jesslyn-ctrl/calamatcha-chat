@@ -12,8 +12,6 @@ const PrivateRoute: React.FC = () => {
     return <LoadingSpinner />;
   }
 
-  console.log("isAuth: " + isAuthenticated());
-
   if (isAuthenticated()) {
     return (
       <RootLayout>

@@ -12,7 +12,7 @@ import dummyChats from "../assets/data/dummyChats.json";
 import dummyGroups from "../assets/data/dummyGroups.json";
 
 const ChatHome: React.FC = () => {
-  const { logout } = useFirebase();
+  const { logout, user } = useFirebase();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<
     "chats" | "friends" | "groups" | "profile"
@@ -164,7 +164,7 @@ const ChatHome: React.FC = () => {
       <div className="w-1/2 p-4 relative flex flex-col overflow-y-auto">
         {/* Right side (chat bubbles) */}
         <div className="flex-grow">
-          <ChatForm sender="Me" />
+          <ChatForm sender={user?.chatDisplayName} />
         </div>
       </div>
     </section>

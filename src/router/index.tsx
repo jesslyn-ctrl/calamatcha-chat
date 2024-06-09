@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import RootLayout from "../layouts/RootLayout";
 import PrivateRoute from "./privateRoute";
 import ProtectedRoute from "./protectedRoute";
-import { Auth, ChatHome } from "../pages";
+import { Auth, PostAuth, ChatHome } from "../pages";
 // import { NotFound } from "../components";
 
 const RootRouter: React.FC = () => {
@@ -16,6 +16,7 @@ const RootRouter: React.FC = () => {
 
       <Route path="/" element={<PrivateRoute />}>
         <Route index element={<ChatHome />} />
+        <Route path="user-form" element={<PostAuth />} />
       </Route>
 
       <Route path="/" element={<ProtectedRoute />}>
