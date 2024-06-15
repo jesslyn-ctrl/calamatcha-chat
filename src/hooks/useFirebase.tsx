@@ -65,19 +65,20 @@ const useFirebase = () => {
 
     // Clean up function
     return () => unregister();
-  }, [navigate]);
+  }, [navigate, auth, user?.username]);
 
   /**
    * Check if user exists
    */
-  const checkUserExists = async (uid: string): Promise<User> => {
+  const checkUserExists = async (uid: string): Promise<boolean> => {
     const database = getDatabase(firebase);
     const userRef = ref(database, `users/${uid}`);
     const snapshot = await get(userRef);
 
     if (snapshot.exists()) {
       const userData = snapshot.val() as User;
-      return userData;
+      // return userData && userData.username;
+      return !!userData;
     }
   };
 
