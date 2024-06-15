@@ -4,14 +4,9 @@ import useFirebase from "./../../hooks/useFirebase";
 interface AddFriendPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddFriend: (email: string) => void;
 }
 
-const AddFriendPopup: React.FC<AddFriendPopupProps> = ({
-  isOpen,
-  onClose,
-  onAddFriend,
-}) => {
+const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
   const { searchEmails, addFriend } = useFirebase();
   const [email, setEmail] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -20,7 +15,6 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({
     if (email) {
       try {
         const emails = await searchEmails(email);
-        console.log(emails);
         setSuggestions(emails);
       } catch (error) {
         console.error("Error fetching email suggestions:", error);
@@ -39,7 +33,7 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({
     if (email) {
       try {
         await addFriend(email);
-        onAddFriend(email);
+        // onAddFriend(email);
         setEmail("");
         setSuggestions([]);
         onClose();

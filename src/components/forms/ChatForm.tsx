@@ -1,20 +1,39 @@
 import React, { useState } from "react";
+import useFirebase from "../../hooks/useFirebase";
 import { Bubble } from "../../components";
+import { Friend } from "../../models";
 
 interface ChatFormProps {
   sender: string;
-  recipient: string;
+  recipientId: string;
+  recipientName: string;
 }
 
-const ChatForm: React.FC<ChatFormProps> = ({ sender, recipient }) => {
+const ChatForm: React.FC<ChatFormProps> = ({
+  sender,
+  recipientId,
+  recipientName,
+}) => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
+  const { user, sendChatMessage, createUpdateChatHeader } = useFirebase();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Message sent: ", message);
-    setMessages([...messages, message]);
-    setMessage("");
+
+    if (!message || message.trim() === "") {
+      return;
+    }
+
+    try {
+      await sendChatMessage(recipientId, message);
+      await createUpdateChatHeader(recipientId, recipientName, message);
+
+      setMessages([...messages, message]);
+      setMessage("");
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
   };
 
   return (
@@ -26,13 +45,20 @@ const ChatForm: React.FC<ChatFormProps> = ({ sender, recipient }) => {
       >
         {/* Profile Icon */}
         <div className="rounded-full h-12 w-12 bg-gray-400 flex items-center justify-center mr-4">
-          <span className="text-white text-lg font-bold">P</span>
+          <img
+            src="/assets/images/icons/profile-white-64.png"
+            width="36"
+            height="36"
+          />
+          {/* <span className="text-white text-lg font-bold">P</span> */}
         </div>
 
         {/* Sender Name and Last Seen */}
         <div className="flex flex-col">
-          <h3 className="text-black font-semibold font-serif">{recipient}</h3>
-          <p className="text-gray-500 text-sm">Last seen: 2 hours ago</p>
+          <h3 className="text-black font-semibold font-serif">
+            {recipientName}
+          </h3>
+          <p className="text-gray-500 text-sm">Last seen recently</p>
         </div>
       </div>
 

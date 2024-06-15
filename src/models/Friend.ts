@@ -2,8 +2,9 @@ interface Friend {
   id: string;
   email: string;
   name: string;
-  timestamp: string;
   userId: string;
+  friendUserId: string;
+  timestamp: string;
 }
 
 export default Friend;

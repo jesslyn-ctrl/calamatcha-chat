@@ -3,8 +3,8 @@ import { ChatCard } from "../../components";
 
 interface Chat {
   id: string;
-  sender: string;
-  message: string;
+  recipient: string;
+  lastMessage: string;
 }
 
 interface ChatListProps {
@@ -15,7 +15,11 @@ const ChatList: React.FC<ChatListProps> = ({ chats }) => {
   return (
     <div className="space-y-2">
       {chats.map((chat) => (
-        <ChatCard key={chat.id} sender={chat.sender} message={chat.message} />
+        <ChatCard
+          key={chat.id}
+          recipient={chat.recipient}
+          lastMessage={chat.lastMessage}
+        />
       ))}
     </div>
   );

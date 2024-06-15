@@ -5,7 +5,7 @@ import {
   onAuthStateChanged,
   signInWithPopup,
   signOut,
-  User,
+  User as FirebaseAuthUser,
 } from "firebase/auth";
 import {
   getDatabase,
@@ -14,6 +14,7 @@ import {
   set,
   child,
   query,
+  update,
   equalTo,
   push,
   orderByChild,
@@ -21,7 +22,7 @@ import {
   endAt,
 } from "firebase/database";
 import firebase from "../config/firebase";
-import { Users, Friend } from "../models";
+import { User, Friend } from "../models";
 import { useNavigate } from "react-router-dom";
 
 const useFirebase = () => {
@@ -78,15 +79,16 @@ const useFirebase = () => {
   /**
    * Save User to Realtime DB
    */
-  const saveUserToDatabase = (loggedInUser: User) => {
+  const saveUserToDatabase = (loggedInUser: FirebaseAuthUser) => {
     const database = getDatabase(firebase);
     const usersRef = ref(database, "users");
-    console.log("User: " + loggedInUser);
 
     // Assuming you want to save the user with their UID as the key
     set(child(usersRef, loggedInUser.uid), {
+      id: loggedInUser.uid,
       email: loggedInUser.email,
       displayName: loggedInUser.displayName,
+      timestamp: new Date().toISOString(),
     })
       .then(() => {
         console.log("User data saved to Realtime Database.");
@@ -134,7 +136,7 @@ const useFirebase = () => {
       const snapshot = await get(emailQuery);
       if (snapshot.exists()) {
         const emails = Object.values(snapshot.val())
-          .map((user: Users[]) => user.email)
+          .map((user: User[]) => user.email)
           .filter(
             (email) =>
               email !== user?.email && !existsFriendEmails.includes(email)
@@ -177,6 +179,7 @@ const useFirebase = () => {
       id: newFriendRef.key,
       name: friendData.displayName,
       email: friendEmail,
+      friendUserId: friendData.id,
       userId: user.uid,
       timestamp: new Date().toISOString(),
     };
@@ -214,6 +217,88 @@ const useFirebase = () => {
     }
   }, [user]);
 
+  const sendChatMessage = async (friendId: string, message: string) => {
+    if (!user) {
+      throw new Error("User not authenticated.");
+    }
+
+    if (!message) {
+      return;
+    }
+
+    const database = getDatabase(firebase);
+    const chatRef = ref(database, "chats");
+    const newChatRef = push(chatRef);
+
+    const newMessage = {
+      id: newChatRef.key,
+      senderId: user.uid,
+      recipientId: friendId,
+      message,
+      isRead: false,
+      sentAt: new Date().toISOString(),
+    };
+
+    try {
+      await set(newChatRef, newMessage);
+      console.log("Message sent.");
+    } catch (error) {
+      console.error("Error sending message to the database:", error);
+    }
+  };
+
+  const createUpdateChatHeader = async (
+    friendId: string,
+    friendName: string,
+    message: string
+  ) => {
+    if (!user) {
+      throw new Error("User not authenticated.");
+    }
+
+    if (!message) {
+      return;
+    }
+
+    const database = getDatabase(firebase);
+
+    const existingHeaderRef = query(
+      ref(database, "chat_headers"),
+      orderByChild("combinedId"),
+      equalTo(`${user.uid}_${friendId}`)
+    );
+
+    // Limit to 1 result
+    const snapshot = await get(existingHeaderRef, { single: true });
+    if (snapshot.exists()) {
+      // If chat header already exists, update it with the new message
+      const existingHeader = Object.values(snapshot.val())[0];
+      await update(ref(database, `chat_headers/${existingHeader.id}`), {
+        lastMessage: message,
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
+
+    // New chat header
+    const newHeaderRef = push(ref(database, "chat_headers"));
+    const newChatHeader = {
+      id: newHeaderRef.key,
+      senderId: user.uid,
+      recipientId: friendId,
+      combinedId: `${user.uid}_${friendId}`,
+      recipientName: friendName,
+      lastMessage: message,
+      timestamp: new Date().toISOString(),
+    };
+
+    try {
+      await set(newHeaderRef, newChatHeader);
+    } catch (error) {
+      console.error("Error sending message header to the database:", error);
+    }
+  };
+
   /**
    * Get user authenticated state
    */
@@ -239,6 +324,8 @@ const useFirebase = () => {
     searchEmails,
     addFriend,
     getFriends,
+    sendChatMessage,
+    createUpdateChatHeader,
   };
 };
 

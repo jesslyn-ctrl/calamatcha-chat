@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
 import useFirebase from "../hooks/useFirebase";
+import {
+  getDatabase,
+  ref,
+  query,
+  onValue,
+  orderByChild,
+  equalTo,
+} from "firebase/database";
 import { useNavigate } from "react-router-dom";
 import {
   ChatList,
@@ -8,11 +16,12 @@ import {
   ChatForm,
   AddFriendPopup,
 } from "../components";
-import dummyChats from "../assets/data/dummyChats.json";
+import firebase from "../config/firebase";
+import { Friend } from "../models";
 import dummyGroups from "../assets/data/dummyGroups.json";
 
 const ChatHome: React.FC = () => {
-  const { getFriends, user, logout } = useFirebase();
+  const { user, logout } = useFirebase();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<
     "chats" | "friends" | "groups" | "profile"
@@ -20,27 +29,74 @@ const ChatHome: React.FC = () => {
 
   // Add Friend Popup
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  // Handle Add Friend function
-  const handleAddFriend = (email: string) => {
-    console.log("Adding a friend: ", email);
-    // TODO: Logic
-  };
 
   // Fetch Friends
   const [friends, setFriends] = useState<Friend[]>([]);
   useEffect(() => {
-    const loadFriends = async () => {
-      if (user) {
-        const friendList = await getFriends();
-        setFriends(friendList);
-      }
-    };
+    if (user) {
+      const database = getDatabase(firebase);
+      const friendRef = query(
+        ref(database, "friends"),
+        orderByChild("userId"),
+        equalTo(user.uid)
+      );
 
-    loadFriends();
-  }, [user, getFriends]);
+      onValue(friendRef, async (snapshot) => {
+        const friendData = snapshot.val();
+        if (friendData) {
+          const friendList = Object.keys(friendData).map((key) => ({
+            id: key,
+            ...friendData[key],
+          }));
+
+          setFriends(friendList);
+        }
+      });
+    }
+  }, [user]);
 
   // Manage recipient state for ChatForm
-  const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
+  const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
+
+  // Fetch Chats
+  const [chats, setChats] = useState<Chat[]>([]);
+  useEffect(() => {
+    if (user) {
+      const database = getDatabase(firebase);
+      const chatRef = query(
+        ref(database, "chat_headers"),
+        orderByChild("senderId"),
+        equalTo(user.uid)
+      );
+
+      onValue(chatRef, async (snapshot) => {
+        const chatData = snapshot.val();
+        if (chatData) {
+          const chatList = Object.keys(chatData).map((key) => ({
+            id: key,
+            ...chatData[key],
+          }));
+
+          const chatListWithRecipients = await Promise.all(
+            chatList.map(async (chat) => {
+              const recipientFriend = friends.find(
+                (friend) => friend.friendUserId === chat.recipientId
+              );
+
+              return {
+                id: chat.id,
+                recipient: recipientFriend ? recipientFriend.name : "Unknown",
+                lastMessage: chat.lastMessage,
+                timestamp: chat.timestamp,
+              };
+            })
+          );
+
+          setChats(chatListWithRecipients);
+        }
+      });
+    }
+  }, [user, friends]);
 
   // Logout function
   const handleLogout = async () => {
@@ -146,7 +202,7 @@ const ChatHome: React.FC = () => {
         {/* Chat, Friends or Group List */}
         <div className="flex-grow overflow-y-auto py-2 px-4">
           {activeTab === "chats" ? (
-            <ChatList chats={dummyChats} />
+            <ChatList chats={chats} />
           ) : activeTab === "friends" ? (
             <div>
               <button
@@ -158,11 +214,10 @@ const ChatHome: React.FC = () => {
               <AddFriendPopup
                 isOpen={isPopupOpen}
                 onClose={() => setIsPopupOpen(false)}
-                onAddFriend={handleAddFriend}
               />
               <FriendChatList
                 friendChats={friends}
-                onFriendClick={(friend) => {
+                onFriendClick={(friend: Friend) => {
                   setSelectedFriend(friend);
                 }}
                 selectedFriend={selectedFriend}
@@ -187,7 +242,11 @@ const ChatHome: React.FC = () => {
         {/* Right side (chat bubbles) */}
         <div className="flex-grow">
           {selectedFriend && (
-            <ChatForm sender="Me" recipient={selectedFriend} />
+            <ChatForm
+              sender="Me"
+              recipientId={selectedFriend.friendUserId}
+              recipientName={selectedFriend.name}
+            />
           )}
         </div>
       </div>

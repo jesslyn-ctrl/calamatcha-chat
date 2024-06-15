@@ -1,5 +1,6 @@
 import React from "react";
 import FriendChatCard from "./../cards/FriendChatCard";
+import { Friend } from "../../models";
 
 interface FriendChat {
   id: string;
@@ -9,9 +10,9 @@ interface FriendChat {
 }
 
 interface FriendChatListProps {
-  friendChats: FriendChat[];
-  onFriendClick: (friendName: string) => void;
-  selectedFriend?: string;
+  friendChats: Friend[];
+  onFriendClick: (friend: Friend, friendId: string) => void;
+  selectedFriend?: Friend;
 }
 
 const FriendChatList: React.FC<FriendChatListProps> = ({
@@ -24,11 +25,9 @@ const FriendChatList: React.FC<FriendChatListProps> = ({
       {friendChats.map((friend) => (
         <FriendChatCard
           key={friend.id}
-          id={friend.id}
-          friendName={friend.name}
-          email={friend.email}
-          onFriendClick={onFriendClick}
-          selectedFriend={selectedFriend}
+          friend={friend}
+          onFriendClick={() => onFriendClick(friend, friend.id)}
+          isSelected={friend === selectedFriend}
         />
       ))}
     </div>
