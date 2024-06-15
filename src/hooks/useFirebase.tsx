@@ -14,6 +14,8 @@ import {
   set,
   child,
   query,
+  equalTo,
+  push,
   orderByChild,
   startAt,
   endAt,
@@ -97,24 +99,66 @@ const useFirebase = () => {
   /**
    * Search for emails
    */
-  const searchEmails = useCallback(async (email: string): Promise<string[]> => {
-    const emailQuery = query(
-      ref(getDatabase(firebase), "users"),
-      orderByChild("email"),
-      startAt(email),
-      endAt(email + "\uf8ff")
-    );
-
-    const snapshot = await get(emailQuery);
-    if (snapshot.exists()) {
-      const emails = Object.values(snapshot.val()).map(
-        (user: Users[]) => user.email
+  const searchEmails = useCallback(
+    async (email: string): Promise<string[]> => {
+      const emailQuery = query(
+        ref(getDatabase(firebase), "users"),
+        orderByChild("email"),
+        startAt(email),
+        endAt(email + "\uf8ff")
       );
-      return emails as string[];
-    } else {
-      return [];
+
+      const snapshot = await get(emailQuery);
+      if (snapshot.exists()) {
+        const emails = Object.values(snapshot.val())
+          .map((user: Users[]) => user.email)
+          .filter((email) => email !== user?.email);
+        return emails as string[];
+      } else {
+        return [];
+      }
+    },
+    [user?.email]
+  );
+
+  const addFriend = async (friendEmail: string) => {
+    if (!user) {
+      throw new Error("User not authenticated.");
     }
-  }, []);
+
+    const database = getDatabase(firebase);
+
+    const usersRef = ref(database, "users");
+    const userQuery = query(
+      usersRef,
+      orderByChild("email"),
+      equalTo(friendEmail)
+    );
+    const userSnapshot = await get(userQuery);
+
+    if (!userSnapshot.exists()) {
+      throw new Error("User does not exist.");
+    }
+
+    const friendData = Object.values(userSnapshot.val())[0] as User;
+    const friendRef = ref(database, "friends");
+    const newFriendRef = push(friendRef);
+
+    const newFriend = {
+      id: newFriendRef.key,
+      name: friendData.displayName,
+      email: friendEmail,
+      userId: user.uid,
+      timestamp: new Date().toISOString(),
+    };
+
+    try {
+      await set(newFriendRef, newFriend);
+      console.log("Friend added to the database.");
+    } catch (error) {
+      console.error("Error adding friend to the database:", error);
+    }
+  };
 
   /**
    * Get user authenticated state
@@ -139,6 +183,7 @@ const useFirebase = () => {
     isLoading,
     logout,
     searchEmails,
+    addFriend,
   };
 };
 

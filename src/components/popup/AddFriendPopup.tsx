@@ -12,7 +12,7 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({
   onClose,
   onAddFriend,
 }) => {
-  const { searchEmails } = useFirebase();
+  const { searchEmails, addFriend } = useFirebase();
   const [email, setEmail] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
@@ -35,12 +35,17 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({
     fetchEmailSuggestions();
   }, [email, fetchEmailSuggestions]);
 
-  const handleAddFriend = () => {
+  const handleAddFriend = async () => {
     if (email) {
-      onAddFriend(email);
-      setEmail("");
-      setSuggestions([]);
-      onClose();
+      try {
+        await addFriend(email);
+        onAddFriend(email);
+        setEmail("");
+        setSuggestions([]);
+        onClose();
+      } catch (error) {
+        console.error("Error adding friend:", error);
+      }
     }
   };
 
