@@ -21,7 +21,7 @@ import {
   endAt,
 } from "firebase/database";
 import firebase from "../config/firebase";
-import { Users } from "../models";
+import { Users, Friend } from "../models";
 import { useNavigate } from "react-router-dom";
 
 const useFirebase = () => {
@@ -101,8 +101,31 @@ const useFirebase = () => {
    */
   const searchEmails = useCallback(
     async (email: string): Promise<string[]> => {
+      if (!user) {
+        return [];
+      }
+
+      const database = getDatabase(firebase);
+
+      // Fetch existing friends for the loggedIn user
+      const friendsQuery = query(
+        ref(database, "friends"),
+        orderByChild("userId"),
+        equalTo(user.uid)
+      );
+
+      const friendsSnapshot = await get(friendsQuery);
+      let existsFriendEmails: string[] = [];
+
+      if (friendsSnapshot.exists()) {
+        existsFriendEmails = Object.values(friendsSnapshot.val()).map(
+          (friend: Friend) => friend.email
+        );
+      }
+
+      // Fetch users whose emails match the query
       const emailQuery = query(
-        ref(getDatabase(firebase), "users"),
+        ref(database, "users"),
         orderByChild("email"),
         startAt(email),
         endAt(email + "\uf8ff")
@@ -112,15 +135,21 @@ const useFirebase = () => {
       if (snapshot.exists()) {
         const emails = Object.values(snapshot.val())
           .map((user: Users[]) => user.email)
-          .filter((email) => email !== user?.email);
+          .filter(
+            (email) =>
+              email !== user?.email && !existsFriendEmails.includes(email)
+          );
         return emails as string[];
       } else {
         return [];
       }
     },
-    [user?.email]
+    [user]
   );
 
+  /**
+   * Add Friend
+   */
   const addFriend = async (friendEmail: string) => {
     if (!user) {
       throw new Error("User not authenticated.");
@@ -161,6 +190,31 @@ const useFirebase = () => {
   };
 
   /**
+   * Fetch Friend List
+   */
+  const getFriends = useCallback(async (): Promise<Friend[]> => {
+    if (!user) {
+      return [];
+    }
+
+    const database = getDatabase(firebase);
+    const friendRef = query(
+      ref(database, "friends"),
+      orderByChild("userId"),
+      equalTo(user.uid)
+    );
+    const snapshot = await get(friendRef);
+
+    if (snapshot.exists()) {
+      const friendData = snapshot.val();
+      const friends: Friend[] = Object.values(friendData);
+      return friends;
+    } else {
+      return [];
+    }
+  }, [user]);
+
+  /**
    * Get user authenticated state
    */
   const isAuthenticated = () => {
@@ -184,6 +238,7 @@ const useFirebase = () => {
     logout,
     searchEmails,
     addFriend,
+    getFriends,
   };
 };
 

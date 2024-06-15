@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import useFirebase from "../hooks/useFirebase";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,7 +12,7 @@ import dummyChats from "../assets/data/dummyChats.json";
 import dummyGroups from "../assets/data/dummyGroups.json";
 
 const ChatHome: React.FC = () => {
-  const { logout } = useFirebase();
+  const { getFriends, user, logout } = useFirebase();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<
     "chats" | "friends" | "groups" | "profile"
@@ -25,6 +25,22 @@ const ChatHome: React.FC = () => {
     console.log("Adding a friend: ", email);
     // TODO: Logic
   };
+
+  // Fetch Friends
+  const [friends, setFriends] = useState<Friend[]>([]);
+  useEffect(() => {
+    const loadFriends = async () => {
+      if (user) {
+        const friendList = await getFriends();
+        setFriends(friendList);
+      }
+    };
+
+    loadFriends();
+  }, [user, getFriends]);
+
+  // Manage recipient state for ChatForm
+  const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
 
   // Logout function
   const handleLogout = async () => {
@@ -144,7 +160,13 @@ const ChatHome: React.FC = () => {
                 onClose={() => setIsPopupOpen(false)}
                 onAddFriend={handleAddFriend}
               />
-              <FriendChatList friendChats={dummyGroups} />
+              <FriendChatList
+                friendChats={friends}
+                onFriendClick={(friend) => {
+                  setSelectedFriend(friend);
+                }}
+                selectedFriend={selectedFriend}
+              />
             </div>
           ) : activeTab === "groups" ? (
             <GroupChatList groupChats={dummyGroups} />
@@ -164,7 +186,9 @@ const ChatHome: React.FC = () => {
       <div className="w-1/2 p-4 relative flex flex-col overflow-y-auto">
         {/* Right side (chat bubbles) */}
         <div className="flex-grow">
-          <ChatForm sender="Me" />
+          {selectedFriend && (
+            <ChatForm sender="Me" recipient={selectedFriend} />
+          )}
         </div>
       </div>
     </section>

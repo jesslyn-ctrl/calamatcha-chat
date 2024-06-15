@@ -3,9 +3,10 @@ import { Bubble } from "../../components";
 
 interface ChatFormProps {
   sender: string;
+  recipient: string;
 }
 
-const ChatForm: React.FC<ChatFormProps> = ({ sender }) => {
+const ChatForm: React.FC<ChatFormProps> = ({ sender, recipient }) => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
 
@@ -30,7 +31,7 @@ const ChatForm: React.FC<ChatFormProps> = ({ sender }) => {
 
         {/* Sender Name and Last Seen */}
         <div className="flex flex-col">
-          <h3 className="text-black font-semibold font-serif">{sender}</h3>
+          <h3 className="text-black font-semibold font-serif">{recipient}</h3>
           <p className="text-gray-500 text-sm">Last seen: 2 hours ago</p>
         </div>
       </div>
