@@ -20,14 +20,14 @@ const Auth: React.FC = () => {
           />
         </div>
         <div className="w-full md:w-1/2 bg-white flex flex-col items-center">
-          <marquee
+          {/* <marquee
             className="mt-12 mb-4 text-center text-2xl text-green-500 font-bold font-serif"
             behavior="scroll"
             direction="right"
             scrollamount="20"
           >
             Chat with ease and enjoy a cup of Green Tea & Calamary!
-          </marquee>
+          </marquee> */}
           <div className="flex flex-col items-center justify-center h-full">
             {formComponent}
           </div>

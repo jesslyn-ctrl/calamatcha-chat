@@ -2,12 +2,6 @@ import React from "react";
 import { ChatCard } from "../../components";
 import { ChatHeader } from "../../models"
 
-interface Chat {
-  headerId: string;
-  recipient: string;
-  lastMessage: string;
-}
-
 interface ChatListProps {
   chats: ChatHeader[];
   onChatClick: (chatHeader: ChatHeader, headerId: string) => void;

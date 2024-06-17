@@ -8,7 +8,11 @@ const LoginForm: React.FC = () => {
     try {
       await signInWithGoogle();
     } catch (error) {
-      console.error("Error signing in with Google:", error.message);
+      if (error instanceof Error) {
+        console.error("Error signing in with Google:", error.message);
+      } else {
+        console.error("Unexpected error signing in with Google:", error);
+      }
     }
   };
 

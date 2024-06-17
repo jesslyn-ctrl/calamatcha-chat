@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   getAuth,
+  Auth,
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithPopup,
@@ -22,12 +23,12 @@ import {
   endAt,
 } from "firebase/database";
 import firebase from "../config/firebase";
-import { User, Friend } from "../models";
+import { User, Friend, ChatHeader } from "../models";
 import { useNavigate } from "react-router-dom";
 
 const useFirebase = () => {
-  const [auth, setAuth] = useState(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [auth, setAuth] = useState<Auth | null>(null);
+  const [user, setUser] = useState<FirebaseAuthUser | null>(null);
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -72,7 +73,11 @@ const useFirebase = () => {
       navigate("/");
       return user;
     } catch (error) {
-      throw new Error("Error signing in with Google: " + error.message);
+      if (error instanceof Error) {
+        throw new Error("Error signing in with Google: " + error.message);
+      } else {
+        throw new Error("Unexpected error signing in with Google: " + error);
+      }
     }
   };
 
@@ -116,13 +121,16 @@ const useFirebase = () => {
         equalTo(user.uid)
       );
 
-      const friendsSnapshot = await get(friendsQuery);
+      const friendSnapshot = await get(friendsQuery);
       let existsFriendEmails: string[] = [];
 
-      if (friendsSnapshot.exists()) {
-        existsFriendEmails = Object.values(friendsSnapshot.val()).map(
-          (friend: Friend) => friend.email
-        );
+      if (friendSnapshot.exists()) {
+        const friendData: { [key: string]: Friend } | null = friendSnapshot.val();
+        if (friendData) {
+          existsFriendEmails = Object.values(friendData).map(
+            (friend: Friend) => friend.email
+          );
+        }
       }
 
       // Fetch users whose emails match the query
@@ -135,13 +143,17 @@ const useFirebase = () => {
 
       const snapshot = await get(emailQuery);
       if (snapshot.exists()) {
-        const emails = Object.values(snapshot.val())
-          .map((user: User[]) => user.email)
-          .filter(
-            (email) =>
-              email !== user?.email && !existsFriendEmails.includes(email)
-          );
-        return emails as string[];
+        const usersData: { [key: string]: User } | null = snapshot.val();
+        if (usersData) {
+          const emails = Object.values(usersData).map((user: User) => user.email)
+            .filter(
+              (email) =>
+                email !== user?.email && !existsFriendEmails.includes(email)
+            );
+          return emails as string[];
+        } else {
+          return [];
+        }
       } else {
         return [];
       }
@@ -270,12 +282,13 @@ const useFirebase = () => {
       );
 
       const snapshot = await get(friendRef);
-      const friendData = snapshot.val();
+      const friendData: { [key: string]: Friend } | null = snapshot.val();
       if (friendData) {
-        return Object.values(friendData).some(friend => friend.friendUserId === friendId);
+        return Object.values(friendData).some((friend: Friend) => friend.friendUserId === friendId);
       } else {
         return false;
       }
+
     }
     return false;
   };
@@ -337,12 +350,12 @@ const useFirebase = () => {
     const snapshot1 = await get(chatHeaderRef1);
     const snapshot2 = await get(chatHeaderRef2);
 
-    let existingHeader = null;
+    let existingHeader: ChatHeader | null = null;
 
     if (snapshot1.exists()) {
-      existingHeader = Object.values(snapshot1.val())[0];
+      existingHeader = Object.values<ChatHeader>(snapshot1.val())[0];
     } else if (snapshot2.exists()) {
-      existingHeader = Object.values(snapshot2.val())[0];
+      existingHeader = Object.values<ChatHeader>(snapshot2.val())[0];
     }
 
     if (existingHeader) {
@@ -375,10 +388,10 @@ const useFirebase = () => {
     );
 
     // Limit to 1 result
-    const snapshot = await get(existingHeaderRef, { single: true });
+    const snapshot = await get(existingHeaderRef);
     if (snapshot.exists()) {
       // If chat header already exists, update it with the new message
-      const existingHeader = Object.values(snapshot.val())[0];
+      const existingHeader = Object.values<ChatHeader>(snapshot.val())[0];
       await update(ref(database, `chat_headers/${existingHeader.id}`), {
         lastMessage: message,
         timestamp: new Date().toISOString(),
@@ -416,7 +429,11 @@ const useFirebase = () => {
 
   const logout = async () => {
     try {
-      await signOut(auth);
+      if (auth) {
+        await signOut(auth);
+      } else {
+        console.error("Error signing out: 'auth' is null");
+      }
     } catch (error) {
       console.error("Error signing out:", error);
     }

@@ -1,5 +1,5 @@
 import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import RootLayout from "../layouts/RootLayout";
 import useFirebase from "../hooks/useFirebase";
 import { LoadingSpinner } from "../components";
@@ -13,11 +13,7 @@ const PrivateRoute: React.FC = () => {
   }
 
   if (isAuthenticated()) {
-    return (
-      <RootLayout>
-        <Outlet />
-      </RootLayout>
-    );
+    return <RootLayout />;
   }
 
   // Redirect to login page if user is not authenticated

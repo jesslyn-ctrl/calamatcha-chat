@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 interface UserFormProps {
   onUsernameSubmit: (username: string) => void;
@@ -7,14 +7,14 @@ interface UserFormProps {
 
 const UserForm: React.FC<UserFormProps> = ({ onUsernameSubmit }) => {
   const [username, setUsername] = useState("");
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     if (username.trim() !== "") {
       onUsernameSubmit(username.trim());
       // Redirect
-      history.push("/");
+      navigate("/");
     } else {
       // TODO: Add validation
     }

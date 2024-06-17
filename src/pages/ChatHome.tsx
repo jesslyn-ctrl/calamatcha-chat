@@ -12,13 +12,11 @@ import { useNavigate } from "react-router-dom";
 import {
   ChatList,
   FriendChatList,
-  GroupChatList,
   ChatForm,
   AddFriendPopup,
 } from "../components";
 import firebase from "../config/firebase";
 import { Friend, ChatHeader } from "../models";
-import dummyGroups from "../assets/data/dummyGroups.json";
 
 const ChatHome: React.FC = () => {
   const { user, logout } = useFirebase();
@@ -107,7 +105,11 @@ const ChatHome: React.FC = () => {
       await logout();
       navigate("/login");
     } catch (error) {
-      console.error("Error signing out:", error.message);
+      if (error instanceof Error) {
+        console.error("Error signing out:", error.message);
+      } else {
+        console.error("Unexpected error signing out:", error);
+      }
     }
   };
 
@@ -207,7 +209,7 @@ const ChatHome: React.FC = () => {
           {activeTab === "chats" ? (
             <ChatList chats={chats} onChatClick={(chatHeader: ChatHeader) => {
               setSelectedChat(chatHeader);
-            }} selectedChat={selectedChat} />
+            }} selectedChat={selectedChat || undefined} />
           ) : activeTab === "friends" ? (
             <div>
               <button
@@ -234,7 +236,7 @@ const ChatHome: React.FC = () => {
                 onFriendClick={(friend: Friend) => {
                   setSelectedFriend(friend);
                 }}
-                selectedFriend={selectedFriend}
+                selectedFriend={selectedFriend || undefined}
               />
             </div>
           )
@@ -259,8 +261,8 @@ const ChatHome: React.FC = () => {
         <div className="flex-grow">
         {(selectedFriend || selectedChat) && (
             <ChatForm
-              recipientId={selectedFriend ? selectedFriend.friendUserId : selectedChat.recipientId}
-              recipientName={selectedFriend ? selectedFriend.name : selectedChat.recipientName}
+              recipientId={selectedFriend ? selectedFriend.friendUserId : selectedChat!.recipientId}
+              recipientName={selectedFriend ? selectedFriend.name : selectedChat!.recipientName}
             />
           )}
         </div>

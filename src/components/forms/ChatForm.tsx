@@ -10,8 +10,6 @@ import { Chat } from "../../models";
 import firebase from "../../config/firebase";
 
 interface ChatFormProps {
-  chatHeaderId: string;
-  sender: string;
   recipientId: string;
   recipientName: string;
 }
@@ -26,21 +24,25 @@ const ChatForm: React.FC<ChatFormProps> = ({
   const [chatHeaderId, setChatHeaderId] = useState<string | null>(null);
   const [isFriend, setIsFriend] = useState<boolean>(false);
   const chatContentRef = useRef<HTMLDivElement>(null);
-  const isInitialMount = useRef(true);
 
   useEffect(() => {
     const fetchChatHeaderIdAndMessages = async () => {
       if (user && recipientId) {
         setChatHeaderId(null);
         const headerId = await getChatHeaderId(recipientId);
-        setChatHeaderId(headerId);
+
+        // Ensure headerId is not undefined before setting the state
+        if (headerId !== undefined) {
+          setChatHeaderId(headerId);
+        }
 
         if (chatHeaderId) {
           const unsubscribe = onValue(ref(getDatabase(firebase), "chats"), (snapshot) => {
             const messageData = snapshot.val();
             if (messageData) {
-              const filteredMessages = Object.values(messageData).filter(
-                (message) => message.senderHeaderId === chatHeaderId ||  message.recipientHeaderId === chatHeaderId
+              const messagesArray = Object.values(messageData) as Chat[];
+              const filteredMessages = messagesArray.filter(
+                (msg: Chat) => msg.senderHeaderId === chatHeaderId || msg.recipientHeaderId === chatHeaderId
               );
               setMessages(filteredMessages);
             } else {
@@ -68,16 +70,6 @@ const ChatForm: React.FC<ChatFormProps> = ({
     }
   }, [user, recipientId, isRecipientFriend]);
 
-  const scrollToBottom = () => {
-    if (chatContentRef.current) {
-      chatContentRef.current.scrollTop = chatContentRef.current.scrollHeight;
-    }
-  };
-
-  // useLayoutEffect(() => {
-  //   scrollToBottom();
-  // }, []);
-
   useLayoutEffect(() => {
     if (messages.length > 0) {
       chatContentRef.current?.lastElementChild?.scrollIntoView({ behavior: "smooth" });
@@ -92,13 +84,22 @@ const ChatForm: React.FC<ChatFormProps> = ({
     }
 
     try {
-      // Both will have different headerId binded to every message
-      const senderHeaderId = await createUpdateChatHeader(user.uid, recipientId, recipientName, message);
-      const recipientHeaderId = await createUpdateChatHeader(recipientId, user.uid, user.displayName, message);
-      await sendChatMessage(recipientId, message, senderHeaderId, recipientHeaderId);
+      if (user && recipientId) {
+        if (user.displayName !== null) {
+          // Both will have different headerId binded to every message
+          const senderHeaderId = await createUpdateChatHeader(user.uid, recipientId, recipientName, message);
+          const recipientHeaderId = await createUpdateChatHeader(recipientId, user.uid, user.displayName, message);
 
-      setMessages([...messages, message]);
-      setMessage("");
+          // Ensure senderHeaderId and recipientHeaderId are not null
+          if (senderHeaderId && recipientHeaderId) {
+            await sendChatMessage(recipientId, message, senderHeaderId, recipientHeaderId);
+          } else {
+            console.error("Error creating chat headers - senderHeaderId or recipientHeaderId is undefined");
+          }
+
+          setMessage("");
+        }
+      }
     } catch (error) {
       console.error("Error sending message:", error);
     }
@@ -163,7 +164,7 @@ const ChatForm: React.FC<ChatFormProps> = ({
         <div className="h-full overflow-y-auto bg-white p-3" ref={chatContentRef}>
           {/* Display chat bubbles */}
           {messages.map((msg, index) => (
-            <Bubble key={index} text={msg.message} position={msg.senderId === user.uid ? "right" : "left"} />
+            <Bubble key={index} text={msg.message} position={user && msg.senderId === user.uid ? "right" : "left"} />
           ))}
         </div>
       </div>
