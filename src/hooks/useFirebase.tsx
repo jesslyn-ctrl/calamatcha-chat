@@ -150,9 +150,52 @@ const useFirebase = () => {
   );
 
   /**
-   * Add Friend
+   * Add Friend by ID
    */
-  const addFriend = async (friendEmail: string) => {
+  const addFriendById = async (friendId: string) => {
+    if (!user) {
+      throw new Error("User not authenticated.");
+    }
+
+    const database = getDatabase(firebase);
+
+    const usersRef = ref(database, "users");
+    const userQuery = query(
+      usersRef,
+      orderByChild("id"),
+      equalTo(friendId)
+    );
+    const userSnapshot = await get(userQuery);
+
+    if (!userSnapshot.exists()) {
+      throw new Error("User does not exist.");
+    }
+
+    const friendData = Object.values(userSnapshot.val())[0] as User;
+    const friendRef = ref(database, "friends");
+    const newFriendRef = push(friendRef);
+
+    const newFriend = {
+      id: newFriendRef.key,
+      name: friendData.displayName,
+      email: friendData.email,
+      friendUserId: friendData.id,
+      userId: user.uid,
+      timestamp: new Date().toISOString(),
+    };
+
+    try {
+      await set(newFriendRef, newFriend);
+      console.log("Friend added to the database.");
+    } catch (error) {
+      console.error("Error adding friend to the database:", error);
+    }
+  };
+
+  /**
+   * Add Friend by Email
+   */
+  const addFriendByEmail = async (friendEmail: string) => {
     if (!user) {
       throw new Error("User not authenticated.");
     }
@@ -217,7 +260,27 @@ const useFirebase = () => {
     }
   }, [user]);
 
-  const sendChatMessage = async (friendId: string, message: string) => {
+  const isRecipientFriend = async (friendId: string) => {
+    if (user && friendId) {
+      const database = getDatabase(firebase);
+      const friendRef = query(
+        ref(database, "friends"),
+        orderByChild("userId"),
+        equalTo(user.uid)
+      );
+
+      const snapshot = await get(friendRef);
+      const friendData = snapshot.val();
+      if (friendData) {
+        return Object.values(friendData).some(friend => friend.friendUserId === friendId);
+      } else {
+        return false;
+      }
+    }
+    return false;
+  };
+
+  const sendChatMessage = async (friendId: string, message: string, senderHeaderId: string, recipientHeaderId: string) => {
     if (!user) {
       throw new Error("User not authenticated.");
     }
@@ -237,6 +300,8 @@ const useFirebase = () => {
       message,
       isRead: false,
       sentAt: new Date().toISOString(),
+      senderHeaderId,
+      recipientHeaderId
     };
 
     try {
@@ -247,7 +312,48 @@ const useFirebase = () => {
     }
   };
 
+  const getChatHeaderId = async (friendId: string) => {
+    if (!user) {
+      throw new Error("User not authenticated.");
+    }
+
+    const database = getDatabase(firebase);
+
+    const combinedId1 = `${user.uid}_${friendId}`;
+    const combinedId2 = `${friendId}_${user.uid}`;
+
+    const chatHeaderRef1 = query(
+      ref(database, "chat_headers"),
+      orderByChild("combinedId"),
+      equalTo(combinedId1)
+    );
+
+    const chatHeaderRef2 = query(
+      ref(database, "chat_headers"),
+      orderByChild("combinedId"),
+      equalTo(combinedId2)
+    );
+
+    const snapshot1 = await get(chatHeaderRef1);
+    const snapshot2 = await get(chatHeaderRef2);
+
+    let existingHeader = null;
+
+    if (snapshot1.exists()) {
+      existingHeader = Object.values(snapshot1.val())[0];
+    } else if (snapshot2.exists()) {
+      existingHeader = Object.values(snapshot2.val())[0];
+    }
+
+    if (existingHeader) {
+      return existingHeader.id;
+    } else {
+      return;
+    }
+  }
+
   const createUpdateChatHeader = async (
+    userId: string,
     friendId: string,
     friendName: string,
     message: string
@@ -265,7 +371,7 @@ const useFirebase = () => {
     const existingHeaderRef = query(
       ref(database, "chat_headers"),
       orderByChild("combinedId"),
-      equalTo(`${user.uid}_${friendId}`)
+      equalTo(`${userId}_${friendId}`)
     );
 
     // Limit to 1 result
@@ -277,16 +383,16 @@ const useFirebase = () => {
         lastMessage: message,
         timestamp: new Date().toISOString(),
       });
-      return;
+      return existingHeader.id;
     }
 
     // New chat header
     const newHeaderRef = push(ref(database, "chat_headers"));
     const newChatHeader = {
       id: newHeaderRef.key,
-      senderId: user.uid,
+      senderId: userId,
       recipientId: friendId,
-      combinedId: `${user.uid}_${friendId}`,
+      combinedId: `${userId}_${friendId}`,
       recipientName: friendName,
       lastMessage: message,
       timestamp: new Date().toISOString(),
@@ -294,6 +400,7 @@ const useFirebase = () => {
 
     try {
       await set(newHeaderRef, newChatHeader);
+      return newHeaderRef.key;
     } catch (error) {
       console.error("Error sending message header to the database:", error);
     }
@@ -322,9 +429,12 @@ const useFirebase = () => {
     isLoading,
     logout,
     searchEmails,
-    addFriend,
+    addFriendById,
+    addFriendByEmail,
     getFriends,
+    isRecipientFriend,
     sendChatMessage,
+    getChatHeaderId,
     createUpdateChatHeader,
   };
 };

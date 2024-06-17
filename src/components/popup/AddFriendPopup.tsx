@@ -7,7 +7,7 @@ interface AddFriendPopupProps {
 }
 
 const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
-  const { searchEmails, addFriend } = useFirebase();
+  const { searchEmails, addFriendByEmail } = useFirebase();
   const [email, setEmail] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
@@ -32,7 +32,7 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
   const handleAddFriend = async () => {
     if (email) {
       try {
-        await addFriend(email);
+        await addFriendByEmail(email);
         // onAddFriend(email);
         setEmail("");
         setSuggestions([]);

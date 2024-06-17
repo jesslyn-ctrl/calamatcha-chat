@@ -17,14 +17,14 @@ import {
   AddFriendPopup,
 } from "../components";
 import firebase from "../config/firebase";
-import { Friend } from "../models";
+import { Friend, ChatHeader } from "../models";
 import dummyGroups from "../assets/data/dummyGroups.json";
 
 const ChatHome: React.FC = () => {
   const { user, logout } = useFirebase();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<
-    "chats" | "friends" | "groups" | "profile"
+    "chats" | "friends" | "profile"
   >("chats");
 
   // Add Friend Popup
@@ -59,10 +59,11 @@ const ChatHome: React.FC = () => {
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
 
   // Fetch Chats
-  const [chats, setChats] = useState<Chat[]>([]);
+  const [chats, setChats] = useState<ChatHeader[]>([]);
   useEffect(() => {
     if (user) {
       const database = getDatabase(firebase);
+
       const chatRef = query(
         ref(database, "chat_headers"),
         orderByChild("senderId"),
@@ -77,26 +78,28 @@ const ChatHome: React.FC = () => {
             ...chatData[key],
           }));
 
-          const chatListWithRecipients = await Promise.all(
-            chatList.map(async (chat) => {
-              const recipientFriend = friends.find(
-                (friend) => friend.friendUserId === chat.recipientId
-              );
-
-              return {
-                id: chat.id,
-                recipient: recipientFriend ? recipientFriend.name : "Unknown",
-                lastMessage: chat.lastMessage,
-                timestamp: chat.timestamp,
-              };
-            })
-          );
-
-          setChats(chatListWithRecipients);
+          setChats(chatList);
         }
       });
     }
-  }, [user, friends]);
+  }, [user]);
+
+  const [selectedChat, setSelectedChat] = useState<ChatHeader | null>(null);
+
+  // Handle switching between selectedFriend and selectedChat
+  useEffect(() => {
+    // If selectedChat is present, prio set selectedChat
+    if (selectedChat) {
+      setSelectedFriend(null);
+    }
+  }, [selectedChat]);
+
+  useEffect(() => {
+    // If selectedFriend is present and selectedChat is null, prio set selectedFriend
+    if (selectedFriend) {
+      setSelectedChat(null);
+    }
+  }, [selectedFriend]);
 
   // Logout function
   const handleLogout = async () => {
@@ -157,7 +160,7 @@ const ChatHome: React.FC = () => {
           </button>
 
           {/* Group Tab */}
-          <button
+          {/* <button
             onClick={() => setActiveTab("groups")}
             className={`mr-2 py-2 px-4 rounded-md ${
               activeTab === "groups"
@@ -175,7 +178,7 @@ const ChatHome: React.FC = () => {
               />
               Groups
             </span>
-          </button>
+          </button> */}
 
           {/* Profile Tab */}
           <button
@@ -202,14 +205,25 @@ const ChatHome: React.FC = () => {
         {/* Chat, Friends or Group List */}
         <div className="flex-grow overflow-y-auto py-2 px-4">
           {activeTab === "chats" ? (
-            <ChatList chats={chats} />
+            <ChatList chats={chats} onChatClick={(chatHeader: ChatHeader) => {
+              setSelectedChat(chatHeader);
+            }} selectedChat={selectedChat} />
           ) : activeTab === "friends" ? (
             <div>
               <button
                 className="py-2 px-4 mb-4 rounded-md font-semibold bg-green-500 hover:bg-green-600 text-white"
                 onClick={() => setIsPopupOpen(true)}
               >
-                Add Friend
+                <span className="flex items-center font-semibold">
+                  <img
+                    width="32"
+                    height="32"
+                    src="/assets/images/icons/add-friend-colored-100.png"
+                    alt="add-friend"
+                    className="pr-2"
+                  />
+                  Add Friend
+                </span>
               </button>
               <AddFriendPopup
                 isOpen={isPopupOpen}
@@ -223,9 +237,11 @@ const ChatHome: React.FC = () => {
                 selectedFriend={selectedFriend}
               />
             </div>
-          ) : activeTab === "groups" ? (
-            <GroupChatList groupChats={dummyGroups} />
-          ) : (
+          )
+          // : activeTab === "groups" ? (
+          //   <GroupChatList groupChats={dummyGroups} />
+          // )
+          : (
             // Handle logout
             <button
               onClick={handleLogout}
@@ -241,11 +257,10 @@ const ChatHome: React.FC = () => {
       <div className="w-1/2 p-4 relative flex flex-col overflow-y-auto">
         {/* Right side (chat bubbles) */}
         <div className="flex-grow">
-          {selectedFriend && (
+        {(selectedFriend || selectedChat) && (
             <ChatForm
-              sender="Me"
-              recipientId={selectedFriend.friendUserId}
-              recipientName={selectedFriend.name}
+              recipientId={selectedFriend ? selectedFriend.friendUserId : selectedChat.recipientId}
+              recipientName={selectedFriend ? selectedFriend.name : selectedChat.recipientName}
             />
           )}
         </div>
